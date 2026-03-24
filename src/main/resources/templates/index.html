@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>首页</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.css" rel="stylesheet" type="text/css" />
+    <script>
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+    </script>
+</head>
+<body class="min-h-screen flex flex-col">
+<!-- 导航栏 -->
+<div th:replace="~{fragments/navbar :: navbar(currentPage='home')}"></div>
+
+<!-- 主要内容 - 全屏渐变 -->
+<main class="flex-1 flex items-center justify-center bg-gradient-to-br from-primary/10 via-secondary/10 to-accent/10">
+    <div class="text-center px-4">
+        <!-- 大标题 -->
+        <h1 class="text-6xl md:text-8xl font-black mb-4 bg-gradient-to-r from-primary via-secondary to-accent bg-clip-text text-transparent">
+            博客
+        </h1>
+
+        <!-- 副标题 -->
+        <p class="text-xl md:text-2xl text-base-content/70 mb-8 max-w-2xl mx-auto">
+            分享技术，记录生活
+        </p>
+
+        <!-- 按钮区域 - 只保留登录按钮（未登录时显示） -->
+        <div class="flex gap-4 justify-center">
+            <a th:if="${session.user == null}" href="/login"
+               class="btn btn-primary btn-lg px-8 shadow-lg hover:shadow-xl transition-all">
+                立即登录
+            </a>
+            <!-- 登录后首页不需要按钮，因为导航栏已经有所有功能 -->
+        </div>
+
+        <!-- 装饰性文字 -->
+        <div class="mt-16 text-base-content/30 text-sm">
+            ✦ 写下你的故事 ✦
+        </div>
+    </div>
+</main>
+
+<!-- 页脚 -->
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script src="/js/theme.js"></script>
+</body>
+</html>

@@ -1,0 +1,63 @@
+spring:
+  datasource:
+    url: jdbc:h2:file:~/h2db/blogdb;DATABASE_TO_UPPER=false  #指定数据库的种类，这里 file意思是文件型数据库
+    driver-class-name: org.h2.Driver  #指定Driver，有了Driver才能访问数据库
+    username: root            #用户名
+    password: root            # 密码
+  sql:
+    init:
+      mode: always
+#      continue-on-error: true  # 遇到错误继续
+      schema-locations: classpath:schema.sql #这个名字是默认的，即使不指定，也会读取这个schema.sql
+      data-locations: classpath:data.sql
+#  h2:
+#    console:
+#      settings:
+#        web-allow-others: true #remote visit
+#        trace: true
+#      path: /h2-console  #Spring启动后，可以访问 http://127.0.0.1:8080/h2-console 查看数据库
+#      enabled: true      #default true。咱也可以用命令行访问好数据库
+  thymeleaf:
+    encoding: UTF-8 # 模板编码
+    mode: HTML  # 要运⽤于模板之上的模板模式
+    prefix: classpath:/templates/  # 在构建 URL 时添加到视图名称前的前缀（默认值： classpath:/templates/ ）
+    suffix: .html  # 在构建 URL 时添加到视图名称后的后缀（默认值： .html ）
+    cache: false
+
+
+mybatis-plus:
+  configuration:
+    map-underscore-to-camel-case: true  # 默认就是false，单向的，只支持 实体类驼峰字段和数据库下划线字段 相互映射
+#    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl # 配置MyBatis-Plus日志实现为标准输出到控制台
+    default-enum-type-handler: com.baomidou.mybatisplus.core.handlers.MybatisEnumTypeHandler
+
+knife4j:
+  enable: true
+  openapi:
+    title: knife4j文档
+    description: blog api文档
+#    email: xiaoymin@foxmail.com
+    concat: 天健君和
+    url: https://docs.xiaominfo.com
+    version: v1.0
+#    license: Apache 2.0
+#    license-url: https://stackoverflow.com/
+    terms-of-service-url: http:/127.0.0.1:8080/
+    group:
+      test1:
+        group-name: 2.x版本
+        api-rule: package
+        api-rule-resources:
+#          - com.knife4j.demo.new3
+          - com.jun.blog.controller
+
+logging:
+  level:
+    root: info
+    sql: debug
+  file:
+    name: logs/blog.log
+  pattern:
+    console: "%d{yyyy-MM-dd HH:mm:ss} [%thread] %-5level %logger{36} - %msg%n"
+    dateformat: yyyy-MM-dd HH:mm:ss.SSS
+

@@ -1,0 +1,316 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>登录 - 博客系统</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.css" rel="stylesheet" type="text/css" />
+    <script>
+        const savedTheme = localStorage.getItem("theme") || "light";
+        document.documentElement.setAttribute("data-theme", savedTheme);
+    </script>
+</head>
+<body class="min-h-screen flex flex-col">
+<div th:replace="~{fragments/navbar :: navbar(currentPage='login')}"></div>
+
+<main class="flex-1 container mx-auto p-4 flex items-center justify-center">
+    <!-- 登录/注册切换卡片 -->
+    <div class="card w-96 bg-base-100 shadow-xl">
+        <div class="card-body py-6 px-5">
+            <!-- 选项卡 -->
+            <div role="tablist" class="tabs tabs-boxed mb-4">
+                <a role="tab" class="tab" th:classappend="${param.register == null} ? 'tab-active' : ''"
+                   onclick="switchTab('login')" id="login-tab">登录</a>
+                <a role="tab" class="tab" th:classappend="${param.register != null} ? 'tab-active' : ''"
+                   onclick="switchTab('register')" id="register-tab">注册</a>
+            </div>
+
+            <!-- 登录表单 -->
+            <div id="login-form" th:classappend="${param.register == null} ? '' : 'hidden'">
+                <div th:if="${param.error}" class="alert alert-error text-sm py-2 mb-4 shadow-lg">
+                    <div class="flex items-center justify-between w-full">
+                        <span>❌ 用户名或密码错误</span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="btn btn-xs btn-ghost">✕</button>
+                    </div>
+                </div>
+
+                <form method="post" action="/user/doLogin">
+                    <div class="form-control mb-3">
+                        <input type="text" name="username" placeholder="用户名"
+                               class="input input-bordered"
+                               th:value="${param.username}" required />
+                    </div>
+                    <div class="form-control mb-4">
+                        <input type="password" name="password" placeholder="密码"
+                               class="input input-bordered" required />
+                    </div>
+                    <button type="submit" class="btn btn-primary w-full">登录</button>
+                </form>
+
+                <div class="text-center mt-2">
+                    <a href="#" class="text-sm text-primary">忘记密码？</a>
+                </div>
+            </div>
+
+            <!-- 注册表单 - 用placeholder替代标签 -->
+            <div id="register-form" th:classappend="${param.register != null} ? '' : 'hidden'">
+                <div th:if="${param.registerSuccess}" class="alert alert-success text-sm py-2 mb-4 shadow-lg">
+                    <div class="flex items-center justify-between w-full">
+                        <span>✅ 注册成功！</span>
+                        <a href="/login" class="btn btn-xs btn-ghost">去登录</a>
+                    </div>
+                </div>
+
+                <div th:if="${param.registerError}" class="alert alert-error text-sm py-2 mb-4 shadow-lg">
+                    <div class="flex items-center justify-between w-full">
+                        <span>❌ <span th:text="${param.registerError[0]}">注册失败</span></span>
+                        <button onclick="this.parentElement.parentElement.remove()" class="btn btn-xs btn-ghost">✕</button>
+                    </div>
+                </div>
+
+                <form method="post" action="/user/register" id="registerForm">
+                    <!-- 用户名 -->
+                    <div class="form-control mb-3">
+                        <input type="text"
+                               name="username"
+                               id="username"
+                               placeholder="用户名* (6-20位字母/数字/下划线)"
+                               class="input input-bordered"
+                               th:value="${param.username}"
+                               required />
+                        <div class="text-xs mt-1 h-4" id="username-feedback"></div>
+                    </div>
+
+                    <!-- 邮箱 -->
+                    <div class="form-control mb-3">
+                        <input type="email"
+                               name="email"
+                               id="email"
+                               placeholder="电子邮箱*"
+                               class="input input-bordered"
+                               th:value="${param.email}"
+                               required />
+                        <div class="text-xs mt-1 h-4" id="email-feedback"></div>
+                    </div>
+
+                    <!-- 密码和确认密码一行 -->
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <div class="form-control">
+                            <input type="password"
+                                   name="password"
+                                   id="password"
+                                   placeholder="密码* (至少6位)"
+                                   class="input input-bordered"
+                                   required />
+                            <div class="text-xs mt-1 h-4" id="password-feedback"></div>
+                        </div>
+
+                        <div class="form-control">
+                            <input type="password"
+                                   name="confirmPassword"
+                                   id="confirmPassword"
+                                   placeholder="确认密码*"
+                                   class="input input-bordered"
+                                   required />
+                            <div class="text-xs mt-1 h-4" id="confirm-feedback"></div>
+                        </div>
+                    </div>
+
+                    <!-- 密码强度条 -->
+                    <div class="w-full h-1 bg-base-200 mb-3 rounded-full overflow-hidden">
+                        <div class="h-full bg-success" id="password-strength" style="width: 0%"></div>
+                    </div>
+
+                    <!-- 昵称和手机号一行（选填） -->
+                    <div class="grid grid-cols-2 gap-2 mb-3">
+                        <input type="text"
+                               name="nickname"
+                               placeholder="昵称(选填)"
+                               class="input input-bordered"
+                               th:value="${param.nickname}" />
+
+                        <input type="tel"
+                               name="phone"
+                               id="phone"
+                               placeholder="手机号(选填)"
+                               class="input input-bordered"
+                               th:value="${param.phone}" />
+                    </div>
+                    <div class="text-xs h-4 mb-1" id="phone-feedback"></div>
+
+                    <!-- 用户协议 -->
+                    <div class="form-control mb-4">
+                        <label class="label cursor-pointer justify-start gap-2">
+                            <input type="checkbox" class="checkbox checkbox-sm" required id="agreement" />
+                            <span class="label-text text-sm">同意 <a href="#" class="text-primary">用户协议</a></span>
+                        </label>
+                    </div>
+
+                    <button type="submit" class="btn btn-primary w-full" id="register-btn">注册</button>
+                </form>
+            </div>
+        </div>
+    </div>
+</main>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+
+<!-- 实时校验脚本 -->
+<script>
+    // 用户名实时校验
+    document.getElementById('username')?.addEventListener('input', function(e) {
+        const value = e.target.value;
+        const feedback = document.getElementById('username-feedback');
+        const pattern = /^[a-zA-Z0-9_]{6,20}$/;
+
+        if (value && !pattern.test(value)) {
+            feedback.innerHTML = '❌ 6-20位字母/数字/下划线';
+            feedback.className = 'text-xs mt-1 h-4 text-error';
+            e.target.classList.add('input-error');
+        } else {
+            feedback.innerHTML = '';
+            e.target.classList.remove('input-error');
+        }
+    });
+
+    // 密码实时校验
+    document.getElementById('password')?.addEventListener('input', function(e) {
+        const value = e.target.value;
+        const feedback = document.getElementById('password-feedback');
+        const strengthBar = document.getElementById('password-strength');
+
+        if (value && value.length < 6) {
+            feedback.innerHTML = '❌ 密码至少6位';
+            feedback.className = 'text-xs mt-1 h-4 text-error';
+            e.target.classList.add('input-error');
+        } else {
+            feedback.innerHTML = '';
+            e.target.classList.remove('input-error');
+        }
+
+        let strength = Math.min(value.length * 10, 100);
+        strengthBar.style.width = strength + '%';
+
+        if (document.getElementById('confirmPassword').value) {
+            document.getElementById('confirmPassword').dispatchEvent(new Event('input'));
+        }
+    });
+
+    // 确认密码实时校验
+    document.getElementById('confirmPassword')?.addEventListener('input', function(e) {
+        const password = document.getElementById('password').value;
+        const value = e.target.value;
+        const feedback = document.getElementById('confirm-feedback');
+
+        if (value && value !== password) {
+            feedback.innerHTML = '❌ 密码不一致';
+            feedback.className = 'text-xs mt-1 h-4 text-error';
+            e.target.classList.add('input-error');
+        } else {
+            feedback.innerHTML = '';
+            e.target.classList.remove('input-error');
+        }
+    });
+
+    // 邮箱实时校验
+    document.getElementById('email')?.addEventListener('input', function(e) {
+        const value = e.target.value;
+        const feedback = document.getElementById('email-feedback');
+        const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+        if (value && !pattern.test(value)) {
+            feedback.innerHTML = '❌ 邮箱格式不正确';
+            feedback.className = 'text-xs mt-1 h-4 text-error';
+            e.target.classList.add('input-error');
+        } else {
+            feedback.innerHTML = '';
+            e.target.classList.remove('input-error');
+        }
+    });
+
+    // 手机号实时校验（选填）
+    document.getElementById('phone')?.addEventListener('input', function(e) {
+        const value = e.target.value;
+        const feedback = document.getElementById('phone-feedback');
+        const pattern = /^1[3-9]\d{9}$/;
+
+        if (value && !pattern.test(value)) {
+            feedback.innerHTML = '❌ 手机号格式不正确';
+            feedback.className = 'text-xs mt-1 h-4 text-error';
+            e.target.classList.add('input-error');
+        } else {
+            feedback.innerHTML = '';
+            e.target.classList.remove('input-error');
+        }
+    });
+
+    // 表单提交校验
+    document.getElementById('registerForm')?.addEventListener('submit', function(e) {
+        const username = document.getElementById('username');
+        const password = document.getElementById('password');
+        const confirm = document.getElementById('confirmPassword');
+        const email = document.getElementById('email');
+        const agreement = document.getElementById('agreement');
+
+        let isValid = true;
+
+        if (!username.value || username.classList.contains('input-error')) isValid = false;
+        if (!password.value || password.classList.contains('input-error')) isValid = false;
+        if (!confirm.value || confirm.classList.contains('input-error')) isValid = false;
+        if (!email.value || email.classList.contains('input-error')) isValid = false;
+        if (!agreement.checked) isValid = false;
+
+        if (!isValid) {
+            e.preventDefault();
+            alert('请正确填写所有必填项');
+        }
+    });
+
+    function switchTab(tab) {
+        const loginTab = document.getElementById('login-tab');
+        const registerTab = document.getElementById('register-tab');
+        const loginForm = document.getElementById('login-form');
+        const registerForm = document.getElementById('register-form');
+
+        if (tab === 'login') {
+            loginTab.classList.add('tab-active');
+            registerTab.classList.remove('tab-active');
+            loginForm.classList.remove('hidden');
+            registerForm.classList.add('hidden');
+
+            const url = new URL(window.location.href);
+            url.searchParams.delete('register');
+            window.history.replaceState({}, '', url);
+        } else {
+            registerTab.classList.add('tab-active');
+            loginTab.classList.remove('tab-active');
+            registerForm.classList.remove('hidden');
+            loginForm.classList.add('hidden');
+
+            const url = new URL(window.location.href);
+            url.searchParams.set('register', 'true');
+            url.searchParams.delete('error');
+            window.history.replaceState({}, '', url);
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        const urlParams = new URLSearchParams(window.location.search);
+        if (urlParams.has('register')) {
+            switchTab('register');
+        }
+    });
+
+    setTimeout(() => {
+        document.querySelectorAll('.alert-error, .alert-success').forEach(el => {
+            if (!el.closest('#register-form')?.classList.contains('hidden')) {
+                el.remove();
+            }
+        });
+    }, 5000);
+</script>
+
+<script src="/js/theme.js"></script>
+</body>
+</html>

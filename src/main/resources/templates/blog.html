@@ -1,0 +1,313 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>我的博客</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/daisyui@4.12.23/dist/full.css" rel="stylesheet" type="text/css" />
+
+    <!-- Editor.md 依赖 -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/editor.md@1.5.0/css/editormd.min.css" />
+    <script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/editor.md@1.5.0/editormd.min.js"></script>
+
+    <!-- 博客页面脚本 -->
+    <script src="/js/blog.js" defer></script>
+
+    <style>
+        .modal-box {
+            display: flex;
+            flex-direction: column;
+            max-height: 85vh;
+            overflow: hidden;
+        }
+        #new-markdown-editor {
+            height: 500px !important;
+            min-height: 500px !important;
+            position: relative;
+        }
+        .editormd {
+            height: 100% !important;
+            width: 100% !important;
+        }
+        .editormd .editormd-markdown {
+            height: calc(100% - 45px) !important;
+        }
+        .blog-card {
+            transition: all 0.2s ease;
+        }
+        .blog-card:hover {
+            transform: translateY(-2px);
+        }
+        .line-clamp-2 {
+            display: -webkit-box;
+            -webkit-line-clamp: 2;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        .line-clamp-1 {
+            display: -webkit-box;
+            -webkit-line-clamp: 1;
+            -webkit-box-orient: vertical;
+            overflow: hidden;
+        }
+        input[type="number"]::-webkit-inner-spin-button,
+        input[type="number"]::-webkit-outer-spin-button {
+            opacity: 0.5;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col bg-base-100">
+<div th:replace="~{fragments/navbar :: navbar(currentPage='blog')}"></div>
+
+<main class="flex-1 container mx-auto px-4 py-6 max-w-5xl">
+    <!-- 未登录提示 -->
+    <div th:if="${session.user == null}" class="alert alert-warning shadow-lg">
+        <svg xmlns="http://www.w3.org/2000/svg" class="stroke-current flex-shrink-0 h-6 w-6" fill="none" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+        </svg>
+        <span>请先 <a href="/login" class="link link-primary font-semibold">登录</a> 后查看我的博客</span>
+    </div>
+
+    <div th:unless="${session.user == null}">
+        <!-- 头部区域 -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-5">
+            <div>
+                <h2 class="text-2xl font-bold bg-gradient-to-r from-primary to-secondary bg-clip-text text-transparent">
+                    我的博客
+                </h2>
+                <p class="text-sm text-base-content/60">
+                    共 <span th:text="${pageData.total}">0</span> 篇文章
+                </p>
+            </div>
+            <button class="btn btn-primary btn-sm gap-1" onclick="openNewModal()">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                </svg>
+                写新文章
+            </button>
+        </div>
+
+        <!-- 博客列表 -->
+        <div class="space-y-3">
+            <div th:each="blog : ${pageData.records}" class="blog-card card card-side bg-base-100 shadow-sm hover:shadow-md transition-all duration-200 border border-base-200">
+                <!-- 左侧装饰条 -->
+                <div class="w-1 bg-gradient-to-b from-primary to-secondary rounded-l-2xl"></div>
+
+                <!-- 卡片内容 -->
+                <div class="flex-1 p-4">
+                    <div class="flex justify-between items-start gap-3">
+                        <a th:href="@{/blog/detail/{id}(id=${blog.id})}"
+                           class="flex-1 hover:opacity-80 transition-opacity">
+                            <h3 class="text-lg font-semibold text-primary hover:text-primary-focus line-clamp-1"
+                                th:text="${blog.title}">
+                                博客标题
+                            </h3>
+                        </a>
+
+                        <div class="flex gap-1 flex-shrink-0">
+                            <a th:href="@{/blog/edit/{id}(id=${blog.id})}"
+                               class="btn btn-ghost btn-xs" title="编辑">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                                </svg>
+                            </a>
+                            <button class="btn btn-ghost btn-xs text-error" title="删除"
+                                    th:onclick="'deleteBlog(' + ${blog.id} + ')'">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                </svg>
+                            </button>
+                        </div>
+                    </div>
+
+                    <div class="mt-2">
+                        <p class="text-xs text-base-content/70 leading-relaxed line-clamp-2"
+                           th:text="${blog.summary != null ? blog.summary : (blog.content != null and blog.content.length() > 120 ? blog.content.substring(0,120) + '...' : blog.content)}">
+                            博客摘要内容...
+                        </p>
+                    </div>
+
+                    <div class="flex flex-wrap items-center justify-between gap-2 mt-2 pt-2 border-t border-base-200">
+                        <div class="flex items-center gap-3 text-xs text-base-content/50">
+                            <div class="flex items-center gap-1">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                                </svg>
+                                <span th:text="${#strings.substring(blog.createTime, 0, 10)}">日期</span>
+                            </div>
+                        </div>
+                        <a th:href="@{/blog/detail/{id}(id=${blog.id})}"
+                           class="text-xs text-primary hover:text-primary-focus flex items-center gap-1">
+                            阅读全文
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+                            </svg>
+                        </a>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 空状态 -->
+            <div th:if="${pageData.records == null or pageData.records.isEmpty()}"
+                 class="text-center py-16 bg-base-200 rounded-box">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mx-auto text-base-content/30 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M19 20H5a2 2 0 01-2-2V6a2 2 0 012-2h10a2 2 0 012 2v1m2 13a2 2 0 01-2-2V7m2 13a2 2 0 002-2V9a2 2 0 00-2-2h-2m-4-3H9M7 16h6M7 8h6v4H7V8z" />
+                </svg>
+                <p class="text-base-content/60 mb-3">还没有任何博客文章</p>
+                <button class="btn btn-primary btn-sm" onclick="openNewModal()">
+                    开始写第一篇博客
+                </button>
+            </div>
+        </div>
+
+        <!-- 分页组件 - 始终显示 -->
+        <div class="flex flex-wrap justify-between items-center gap-4 mt-6">
+            <!-- 左侧：每页条数选择器 -->
+            <div class="flex items-center gap-2">
+                <span class="text-sm text-base-content/60">每页</span>
+                <div class="dropdown dropdown-top">
+                    <label tabindex="0" class="btn btn-ghost btn-sm px-2 min-w-[60px]">
+                        <span th:text="${pageSize}">10</span>
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 9l-7 7-7-7" />
+                        </svg>
+                    </label>
+                    <ul tabindex="0" class="dropdown-content z-[1] menu p-1 shadow bg-base-100 rounded-box w-20">
+                        <li><a th:href="@{/blog(page=1, size=10)}">10</a></li>
+                        <li><a th:href="@{/blog(page=1, size=20)}">20</a></li>
+                        <li><a th:href="@{/blog(page=1, size=50)}">50</a></li>
+                    </ul>
+                </div>
+                <span class="text-sm text-base-content/60">条/页</span>
+            </div>
+
+            <!-- 中间：页码按钮 -->
+            <div class="join">
+                <!-- 上一页 -->
+                <a th:if="${pageData.hasPrevious}"
+                   th:href="@{/blog(page=${pageData.current - 1}, size=${pageSize})}"
+                   class="join-item btn btn-sm">
+                    «
+                </a>
+                <a th:unless="${pageData.hasPrevious}" class="join-item btn btn-sm btn-disabled">
+                    «
+                </a>
+
+                <!-- 左侧页码 -->
+                <a th:if="${pageData.current > 3}"
+                   th:href="@{/blog(page=1, size=${pageSize})}"
+                   class="join-item btn btn-sm">
+                    1
+                </a>
+                <span th:if="${pageData.current > 4}" class="join-item btn btn-sm btn-disabled">...</span>
+
+                <!-- 当前页前后两页 -->
+                <a th:each="pageNum : ${#numbers.sequence(pageData.current - 2, pageData.current + 2)}"
+                   th:if="${pageNum >= 1 and pageNum <= pageData.pages}"
+                   th:href="@{/blog(page=${pageNum}, size=${pageSize})}"
+                   th:text="${pageNum}"
+                   th:classappend="${pageNum == pageData.current} ? 'join-item btn btn-sm btn-primary' : 'join-item btn btn-sm'"
+                   class="join-item btn btn-sm">
+                </a>
+
+                <!-- 右侧页码 -->
+                <span th:if="${pageData.current < pageData.pages - 3}" class="join-item btn btn-sm btn-disabled">...</span>
+                <a th:if="${pageData.current < pageData.pages - 2}"
+                   th:href="@{/blog(page=${pageData.pages}, size=${pageSize})}"
+                   th:text="${pageData.pages}"
+                   class="join-item btn btn-sm">
+                </a>
+
+                <!-- 下一页 -->
+                <a th:if="${pageData.hasNext}"
+                   th:href="@{/blog(page=${pageData.current + 1}, size=${pageSize})}"
+                   class="join-item btn btn-sm">
+                    »
+                </a>
+                <a th:unless="${pageData.hasNext}" class="join-item btn btn-sm btn-disabled">
+                    »
+                </a>
+            </div>
+
+            <!-- 右侧：统计和跳转 -->
+            <div class="flex items-center gap-3 text-sm">
+                <span class="text-base-content/60">共 <span th:text="${pageData.total}">0</span> 条</span>
+                <div class="flex items-center gap-1">
+                    <span class="text-base-content/60">第</span>
+                    <input type="number" id="gotoPage" class="input input-bordered input-sm w-16 text-center"
+                           min="1" th:max="${pageData.pages}" th:value="${pageData.current}" />
+                    <span class="text-base-content/60">页</span>
+                    <button class="btn btn-primary btn-sm" onclick="goToPage()">跳转</button>
+                </div>
+            </div>
+        </div>
+    </div>
+</main>
+
+<!-- 新建文章弹窗 -->
+<dialog id="newModal" class="modal">
+    <div class="modal-box w-11/12 max-w-5xl" style="max-height: 85vh; display: flex; flex-direction: column; padding: 1.5rem;">
+        <div class="flex justify-between items-center pb-3 border-b border-base-200">
+            <h3 class="font-bold text-lg flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                </svg>
+                写新文章
+            </h3>
+            <button class="btn btn-sm btn-circle btn-ghost" onclick="closeNewModal()">✕</button>
+        </div>
+
+        <div class="flex-1 overflow-y-auto my-4" style="min-height: 0;">
+            <input type="text" id="new-title" placeholder="文章标题" class="input input-bordered w-full mb-4" />
+
+            <div class="mb-4">
+                <label class="text-sm font-medium mb-2 block">文章摘要</label>
+                <textarea id="new-summary" rows="2" class="textarea textarea-bordered w-full"
+                          placeholder="请输入文章摘要（显示在博客列表中）"></textarea>
+                <p class="text-xs text-base-content/50 mt-1">摘要将显示在博客列表页，建议150字以内</p>
+            </div>
+
+            <div id="new-markdown-editor" style="height: 500px; margin-bottom: 0;">
+                <textarea id="new-content" style="display:none;"></textarea>
+            </div>
+        </div>
+
+        <div class="flex gap-2 pt-3 border-t border-base-200">
+            <button type="button" class="btn btn-primary flex-1" onclick="submitNewBlog()">发布</button>
+            <button type="button" class="btn flex-1" onclick="closeNewModal()">取消</button>
+        </div>
+    </div>
+</dialog>
+
+<div th:replace="~{fragments/footer :: footer}"></div>
+<script src="/js/theme.js"></script>
+
+<script>
+    // 跳转到指定页
+    function goToPage() {
+        var page = document.getElementById('gotoPage').value;
+        var maxPage = [[${pageData.pages}]];
+        var pageSize = [[${pageSize}]];
+
+        if (page && page >= 1 && page <= maxPage) {
+            window.location.href = '/blog?page=' + page + '&size=' + pageSize;
+        } else {
+            alert('请输入 1 到 ' + maxPage + ' 之间的页码');
+        }
+    }
+
+    // 回车跳转
+    var gotoInput = document.getElementById('gotoPage');
+    if (gotoInput) {
+        gotoInput.addEventListener('keypress', function(e) {
+            if (e.key === 'Enter') {
+                goToPage();
+            }
+        });
+    }
+</script>
+
+</body>
+</html>

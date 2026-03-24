@@ -1,0 +1,35 @@
+-- 创建用户表（全小写字段）
+CREATE TABLE IF NOT EXISTS PUBLIC.users (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+	username VARCHAR(50) NOT NULL,
+	password VARCHAR(100) NOT NULL,
+	email VARCHAR(100) NOT NULL,
+	phone VARCHAR(20) NOT NULL,
+	avatar VARCHAR(255),
+	nickname VARCHAR(50),
+	blog_count INTEGER DEFAULT 0,
+	role TINYINT DEFAULT 0 NOT NULL,
+	account_status TINYINT DEFAULT 0,
+	created_at TIMESTAMP DEFAULT LOCALTIMESTAMP,
+	updated_at TIMESTAMP DEFAULT LOCALTIMESTAMP,
+	login_status TINYINT DEFAULT 0,
+	last_login_time TIMESTAMP,
+
+	CONSTRAINT user_pk PRIMARY KEY (id),
+	CONSTRAINT user_unique_username UNIQUE (username),
+	CONSTRAINT user_unique_email UNIQUE (email),
+	CONSTRAINT user_unique_phone UNIQUE (phone)
+);
+
+CREATE TABLE IF NOT EXISTS PUBLIC.blog (
+	id BIGINT NOT NULL AUTO_INCREMENT,
+	title VARCHAR(200) NOT NULL,
+	content LONGTEXT NOT NULL,
+	summary LONGTEXT NOT NULL,
+	author_id BIGINT NOT NULL,
+	author_name VARCHAR(20) NOT NULL,
+	create_time TIMESTAMP DEFAULT LOCALTIMESTAMP,
+
+	CONSTRAINT blog_pk PRIMARY KEY (id),
+	CONSTRAINT blog_unique_title UNIQUE (title)
+);

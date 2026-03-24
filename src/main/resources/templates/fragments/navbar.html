@@ -1,0 +1,64 @@
+<!DOCTYPE html>
+<html xmlns:th="http://www.thymeleaf.org">
+
+<body>
+<!-- 导航栏片段 -->
+<nav class="navbar bg-base-100 shadow-sm" th:fragment="navbar(currentPage)">
+    <div class="navbar-start">
+        <!-- 移动端菜单 -->
+        <div class="dropdown">
+            <div tabindex="0" role="button" class="btn btn-ghost lg:hidden">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h8m-8 6h16" />
+                </svg>
+            </div>
+            <ul tabindex="0" class="menu menu-sm dropdown-content bg-base-100 rounded-box z-[1] mt-3 w-52 p-2 shadow">
+                <li th:classappend="${currentPage == 'blog'} ? 'bg-base-200' : ''"><a href="/blog">我的博客</a></li>
+                <li th:classappend="${currentPage == 'square'} ? 'bg-base-200' : ''"><a href="/square">博客广场</a></li>
+            </ul>
+        </div>
+<!--        <a href="/" class="text-xl">我的博客</a>-->
+        <a href="/" class="btn btn-ghost text-2xl font-bold px-2">
+            <span class="bg-primary text-primary-content rounded-lg w-8 h-8 flex items-center justify-center">B</span>
+        </a>
+    </div>
+
+
+    <!-- 桌面端导航 -->
+    <div class="navbar-center hidden lg:flex">
+        <ul class="menu menu-horizontal px-1">
+            <li th:classappend="${currentPage == 'blog'} ? 'bg-base-200' : ''"><a href="/blog">我的博客</a></li>
+            <li th:classappend="${currentPage == 'square'} ? 'bg-base-200' : ''"><a href="/square">博客广场</a></li>
+        </ul>
+    </div>
+
+    <div class="navbar-end flex gap-2">
+        <!-- 主题 -->
+        <input id="themeToggle" type="checkbox" class="toggle" />
+
+
+        <!-- 用户区域 - 根据登录状态显示 -->
+        <div th:switch="${session.user}">
+            <!-- 已登录 -->
+            <div th:case="*" th:if="${session.user != null}" class="dropdown dropdown-end">
+                <div tabindex="0" role="button" class="btn btn-ghost btn-circle avatar">
+                    <div class="w-10 rounded-full">
+                        <img th:src="${session.user.avatar ?: 'https://img.daisyui.com/images/stock/photo-1534528741775-53994a69daeb.webp'}" />
+                    </div>
+                </div>
+                <ul tabindex="0" class="dropdown-content menu bg-base-100 rounded-box z-[1] w-44 p-2 shadow">
+                    <li><a href="/profile">个人信息</a></li>
+                    <li><a href="/settings">账户设置</a></li>
+                    <li><a href="/logout" class="text-error">退出登录</a></li>
+                </ul>
+            </div>
+            <!-- 未登录 -->
+            <div th:case="null">
+                <a href="/login" class="btn btn-primary">登录</a>
+            </div>
+        </div>
+    </div>
+</nav>
+</body>
+
+</html>
